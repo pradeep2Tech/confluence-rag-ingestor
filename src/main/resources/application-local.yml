@@ -1,0 +1,21 @@
+# Local development profile — reduces manifest lock contention on Windows (Phase 11c).
+confluence:
+  ingestor:
+    default-concurrency: 1
+    per-page-state-enabled: true
+    async-core-pool-size: 1
+    async-max-pool-size: 2
+
+logging:
+  level:
+    com.confluence.ingestor.confluence: DEBUG
+    com.confluence.ingestor.rag: DEBUG
+    com.confluence.ingestor.transform: DEBUG
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces

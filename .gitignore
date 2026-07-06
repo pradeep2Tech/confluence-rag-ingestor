@@ -1,0 +1,54 @@
+# Build
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Runtime / local data
+data/
+logs/
+*.log
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets / env (never commit PATs or local overrides with credentials)
+.env
+.env.*
+!.env.example
+
+# Maven / test artifacts
+*.dump
+*.dumpstream
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+release.properties
+
+# Agent / recovery scratch (do not commit one-off scripts or notes)
+_recovered_tests/
+_extracted_from_transcript/
+_extract_tests.py
+_search_transcripts.py
+_line*.txt
+
+# Staged module source trees are regenerated from src/ when splitting (see MIGRATION_PLAN.md)
+confluence-connector/
+content-transform/
+embedding-indexer/
+ingestion-contracts/
+ingestion-orchestrator/
+ingestion-state/
+query-api/

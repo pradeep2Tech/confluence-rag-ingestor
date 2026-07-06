@@ -1,0 +1,42 @@
+spring:
+  profiles:
+    active: test
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.vectorstore.chroma.autoconfigure.ChromaVectorStoreAutoConfiguration
+  ai:
+    ollama:
+      init:
+        pull-model-strategy: never
+        chat:
+          include: false
+
+confluence:
+  ingestor:
+    data-directory: data
+    default-batch-size: 100
+    default-concurrency: 5
+    default-request-timeout-seconds: 60
+    verify-ssl: false
+    manifest-version: 1
+    retry-skip-threshold: 2
+    allowed-image-extensions:
+      - png
+      - jpg
+      - jpeg
+      - gif
+      - svg
+      - webp
+      - bmp
+    allowed-drawio-extensions:
+      - drawio
+      - xml
+    max-chunk-characters: 4000
+    vector-ingest-enabled: true
+    chroma-collection-name: test-confluence-rag
+    query-enabled: true
+    default-query-top-k: 5
+    default-similarity-threshold: 0.0
+    per-page-state-enabled: false
+    async-core-pool-size: 2
+    async-max-pool-size: 4

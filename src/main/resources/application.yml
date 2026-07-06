@@ -1,0 +1,89 @@
+spring:
+  application:
+    name: confluence-rag-ingestor
+  ai:
+    vectorstore:
+      chroma:
+        client:
+          host: http://localhost
+          port: 8000
+        initialize-schema: true
+        collection-name: ${confluence.ingestor.chroma-collection-name}
+    ollama:
+      base-url: http://localhost:11434
+      embedding:
+        model: nomic-embed-text
+      init:
+        pull-model-strategy: when_missing
+        chat:
+          include: false
+  kafka:
+    bootstrap-servers: ${confluence.ingestor.kafka.bootstrap-servers:localhost:9092}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: http://localhost:4318/v1/traces
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.confluence.ingestor: INFO
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+  file:
+    name: logs/app.log
+
+confluence:
+  ingestor:
+    data-directory: data
+    default-batch-size: 100
+    default-concurrency: 5
+    default-request-timeout-seconds: 60
+    verify-ssl: false
+    manifest-version: 1
+    retry-skip-threshold: 2
+    allowed-image-extensions:
+      - png
+      - jpg
+      - jpeg
+      - gif
+      - svg
+      - webp
+      - bmp
+    allowed-drawio-extensions:
+      - drawio
+      - xml
+    max-chunk-characters: 4000
+    vector-ingest-enabled: true
+    chroma-collection-name: confluence-rag
+    query-enabled: true
+    default-query-top-k: 5
+    default-similarity-threshold: 0.0
+    per-page-state-enabled: false
+    async-core-pool-size: 2
+    async-max-pool-size: 4
+    kafka:
+      enabled: false
+      bootstrap-servers: localhost:9092
+      consumer-group-id: confluence-ingestor
+      manifest-crawl-topic: ingestion.manifest.crawl
+      page-transform-topic: ingestion.page.transform
+      chunk-topic: ingestion.page.chunk
+      vector-ingest-topic: ingestion.page.vector
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
