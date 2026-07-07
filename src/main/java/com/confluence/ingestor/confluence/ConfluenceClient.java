@@ -15,6 +15,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
@@ -40,6 +41,26 @@ public class ConfluenceClient implements ConfluencePort {
 
     public String baseUrl() {
         return baseUrl;
+    }
+
+    /**
+     * Validates PAT by calling {@code GET /rest/api/user/current}.
+     */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> getCurrentUser() {
+        log.debug("Confluence GET current user");
+        try {
+            return restClient.get()
+                    .uri("/rest/api/user/current")
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .body(Map.class);
+        } catch (RestClientResponseException ex) {
+            log.warn("Confluence current user failed status={}", ex.getStatusCode().value());
+            throw toClientError("GET current user failed", ex);
+        } catch (Exception ex) {
+            throw new ConfluenceClientError("GET current user failed: " + ex.getMessage());
+        }
     }
 
     RestClient restClient() {

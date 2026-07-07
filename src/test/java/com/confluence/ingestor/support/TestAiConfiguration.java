@@ -1,5 +1,6 @@
 package com.confluence.ingestor.support;
 
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -24,5 +25,11 @@ public class TestAiConfiguration {
     @Primary
     EmbeddingModel testEmbeddingModel() {
         return mock(EmbeddingModel.class);
+    }
+
+    @Bean
+    @Primary
+    ChatModel testChatModel() {
+        return mock(ChatModel.class);
     }
 }

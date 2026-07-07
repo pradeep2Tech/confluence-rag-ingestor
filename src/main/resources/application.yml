@@ -13,10 +13,13 @@ spring:
       base-url: http://localhost:11434
       embedding:
         model: nomic-embed-text
+      chat:
+        options:
+          model: ${confluence.ingestor.ui-default-llm-model:llama3.2}
       init:
         pull-model-strategy: when_missing
         chat:
-          include: false
+          include: true
   kafka:
     bootstrap-servers: ${confluence.ingestor.kafka.bootstrap-servers:localhost:9092}
 
@@ -73,6 +76,8 @@ confluence:
     per-page-state-enabled: false
     async-core-pool-size: 2
     async-max-pool-size: 4
+    ui-config-file: data/ui-config.json
+    ui-default-llm-model: llama3.2
     kafka:
       enabled: false
       bootstrap-servers: localhost:9092

@@ -21,16 +21,122 @@ Stack: Spring Boot **4.0.3**, Spring AI **2.0.0**, springdoc-openapi **3.0.3**.
 
 ## Build & run
 
+### Backend only (API / Swagger)
+
 ```bash
 cd confluence-rag-ingestor
 mvn spring-boot:run
 ```
 
+Skip the React build during Maven (faster iteration):
+
+```bash
+mvn spring-boot:run -Dskip.frontend=true
+```
+
+### React UI — development mode
+
+Terminal 1 — Spring Boot API on port **8080**:
+
+```bash
+mvn spring-boot:run -Dskip.frontend=true
+```
+
+Terminal 2 — Vite dev server on port **5173** (proxies `/api` and `/health` to Spring Boot):
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open [http://localhost:5173](http://localhost:5173)
+
+### Production JAR (React + API in one artifact)
+
+Builds the React app, copies `frontend/dist` into `classpath:/static/`, and packages a single executable JAR:
+
+```bash
+mvn clean package
+java -jar target/confluence-rag-ingestor-0.1.0-SNAPSHOT.jar
+```
+
+Open [http://127.0.0.1:8080](http://127.0.0.1:8080) for the dashboard.
+
+### Endpoints
+
+- **Dashboard UI:** [http://127.0.0.1:8080/](http://127.0.0.1:8080/)
 - Health: [http://127.0.0.1:8080/health](http://127.0.0.1:8080/health)
 - OpenAPI: [http://127.0.0.1:8080/swagger-ui.html](http://127.0.0.1:8080/swagger-ui.html)
 - Logs: `logs/app.log`
 
 ## API
+
+### Dashboard UI APIs (`/api/*`)
+
+These endpoints power the React dashboard. Legacy ingestion/query endpoints under `/api/confluence/*` remain available.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET` | `/api/config` | Current runtime config (PAT masked) |
+| `POST` | `/api/config` | Save runtime config |
+| `POST` | `/api/confluence/test` | Test Confluence PAT + target page/space |
+| `POST` | `/api/ingest` | Start full ingestion pipeline using saved config |
+| `GET` | `/api/ingest/status` | Ingestion status (`?parentPageId=` optional) |
+| `POST` | `/api/chat` | RAG chat — retrieves chunks + LLM answer with sources |
+
+#### Save configuration
+
+```bash
+curl -X POST "http://localhost:8080/api/config" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"confluenceBaseUrl\":\"https://confluence.example.com\",\"confluenceTarget\":\"12345\",\"pat\":\"YOUR_PAT\",\"llmModel\":\"llama3.2\",\"vectorStore\":\"chroma\"}"
+```
+
+`GET /api/config` returns `maskedPat` like `****abcd` — never the full token.
+
+#### Test Confluence connection
+
+```bash
+curl -X POST "http://localhost:8080/api/confluence/test" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"baseUrl\":\"https://confluence.example.com\",\"confluenceTarget\":\"12345\",\"pat\":\"YOUR_PAT\"}"
+```
+
+#### Start ingestion (dashboard)
+
+```bash
+curl -X POST "http://localhost:8080/api/ingest" -H "Content-Type: application/json" -d "{}"
+```
+
+Runs crawl → markdown → chunk → vector ingest using saved configuration.
+
+#### Ask a question (RAG chat)
+
+```bash
+curl -X POST "http://localhost:8080/api/chat" ^
+  -H "Content-Type: application/json" ^
+  -d "{\"question\":\"How do I configure SSL verification?\",\"parentPageId\":\"12345\"}"
+```
+
+Requires Ollama with a chat model (default `llama3.2`) and ingested vectors in ChromaDB.
+
+### Security — PAT / API token handling
+
+- **Browser:** The React UI never stores PATs in `localStorage` or `sessionStorage`. Tokens are typed into a password field and sent to the backend over HTTP only.
+- **API responses:** `GET /api/config` always returns a masked token (`****` + last 4 chars) or `patConfigured: false`.
+- **Server memory:** PAT is held in the JVM heap after save; restart clears it unless re-supplied.
+- **Optional persistence:** Set `CONFLUENCE_INGESTOR_ENCRYPTION_KEY` (Base64-encoded 32-byte AES key) to persist an encrypted PAT in `data/ui-config.json`. Without this key, non-secret config may be saved but the PAT stays memory-only.
+- **Environment variables:** `CONFLUENCE_PAT`, `CONFLUENCE_BASE_URL`, and `CONFLUENCE_TARGET` can seed config at startup.
+- **Logging:** PAT values are never written to logs (existing ingestion invariant).
+
+Generate an encryption key (PowerShell):
+
+```powershell
+[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
+```
+
+### Legacy ingestion API (`/api/confluence/*`)
 
 ### Initialize ingestion workspace (empty manifest)
 

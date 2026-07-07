@@ -11,6 +11,12 @@ REST layer — thin controllers, validation, DTO mapping. No business logic.
 | `IngestionController` | `GET /health` | static map |
 | | `POST /api/confluence/ingest` | `IngestionService.startIngestion` |
 | | `GET /api/confluence/ingest/status/{parentPageId}` | `IngestionService.getStatus` |
+| `ConfigController` | `GET /api/config` | `RuntimeConfigService.getMaskedConfig` |
+| | `POST /api/config` | `RuntimeConfigService.save` |
+| `ConfluenceTestController` | `POST /api/confluence/test` | `ConfluenceConnectionService.testConnection` |
+| `UiIngestController` | `POST /api/ingest` | `IngestionService` + saved config |
+| | `GET /api/ingest/status` | `IngestionService.getStatus` |
+| `ChatController` | `POST /api/chat` | `ChatService.chat` |
 | `QueryController` | `POST /api/confluence/query` | `QueryService.query` |
 | `GlobalExceptionHandler` | — | `@RestControllerAdvice` for validation/errors |
 
