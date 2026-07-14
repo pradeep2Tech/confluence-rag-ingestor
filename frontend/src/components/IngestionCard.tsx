@@ -1,11 +1,12 @@
 import { Play, RefreshCw } from 'lucide-react';
-import type { IngestionResponse, IngestionStatus } from '../types/api';
+import { useState } from 'react';
+import { DEFAULT_UI_INGEST_REQUEST, type IngestionResponse, type IngestionStatus, type UiIngestRequest } from '../types/api';
 import { LoadingSpinner } from './LoadingSpinner';
 
 interface IngestionCardProps {
   status: IngestionStatus | null;
   lastResult: IngestionResponse | null;
-  onStart: () => void;
+  onStart: (options: UiIngestRequest) => void;
   onRefresh: () => void;
   starting: boolean;
   refreshing: boolean;
@@ -16,6 +17,38 @@ function progressPercent(status: IngestionStatus | null): number {
   return Math.round((status.ingestedCount / status.totalPages) * 100);
 }
 
+function BooleanSelect({
+  id,
+  label,
+  value,
+  onChange,
+  hint,
+}: {
+  id: string;
+  label: string;
+  value: boolean;
+  onChange: (value: boolean) => void;
+  hint?: string;
+}) {
+  return (
+    <div>
+      <label className="label" htmlFor={id}>
+        {label}
+      </label>
+      <select
+        id={id}
+        className="input"
+        value={value ? 'true' : 'false'}
+        onChange={(e) => onChange(e.target.value === 'true')}
+      >
+        <option value="true">Yes</option>
+        <option value="false">No</option>
+      </select>
+      {hint && <p className="mt-1.5 text-xs text-slate-500">{hint}</p>}
+    </div>
+  );
+}
+
 export function IngestionCard({
   status,
   lastResult,
@@ -24,7 +57,12 @@ export function IngestionCard({
   starting,
   refreshing,
 }: IngestionCardProps) {
+  const [options, setOptions] = useState<UiIngestRequest>(DEFAULT_UI_INGEST_REQUEST);
   const percent = progressPercent(status);
+
+  const patchOptions = (patch: Partial<UiIngestRequest>) => {
+    setOptions((prev) => ({ ...prev, ...patch }));
+  };
 
   return (
     <div className="space-y-6">
@@ -40,7 +78,7 @@ export function IngestionCard({
           <div>
             <h3 className="text-lg font-semibold">Pipeline Control</h3>
             <p className="mt-1 text-sm text-slate-400">
-              Runs the full pipeline: manifest crawl → markdown → chunks → vectors.
+              Configure pipeline stages and batch settings, then start ingestion.
             </p>
           </div>
           <div className="flex gap-2">
@@ -48,10 +86,85 @@ export function IngestionCard({
               {refreshing ? <LoadingSpinner /> : <RefreshCw className="h-4 w-4" />}
               Refresh status
             </button>
-            <button type="button" className="btn-primary" onClick={onStart} disabled={starting}>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => onStart(options)}
+              disabled={starting}
+            >
               {starting ? <LoadingSpinner /> : <Play className="h-4 w-4" />}
               Start ingestion
             </button>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+          <h4 className="mb-4 text-sm font-semibold uppercase tracking-wide text-slate-400">
+            Pipeline options
+          </h4>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <BooleanSelect
+              id="forceRebuildManifest"
+              label="Force rebuild manifest"
+              value={options.forceRebuildManifest}
+              onChange={(forceRebuildManifest) => patchOptions({ forceRebuildManifest })}
+              hint="Crawl Confluence and rebuild manifest.json"
+            />
+            <BooleanSelect
+              id="extractMarkdown"
+              label="Extract markdown"
+              value={options.extractMarkdown}
+              onChange={(extractMarkdown) => patchOptions({ extractMarkdown })}
+              hint="Download HTML and write page.md + assets"
+            />
+            <BooleanSelect
+              id="chunkMarkdown"
+              label="Chunk markdown"
+              value={options.chunkMarkdown}
+              onChange={(chunkMarkdown) => patchOptions({ chunkMarkdown })}
+              hint="Split pages into heading-based chunks"
+            />
+            <BooleanSelect
+              id="ingestVectors"
+              label="Ingest vectors"
+              value={options.ingestVectors}
+              onChange={(ingestVectors) => patchOptions({ ingestVectors })}
+              hint="Embed chunks and store in ChromaDB"
+            />
+            <div>
+              <label className="label" htmlFor="batchSize">
+                Batch size
+              </label>
+              <input
+                id="batchSize"
+                type="number"
+                className="input"
+                min={1}
+                max={5000}
+                value={options.batchSize ?? DEFAULT_UI_INGEST_REQUEST.batchSize}
+                onChange={(e) =>
+                  patchOptions({ batchSize: Math.max(1, Math.min(5000, Number(e.target.value) || 1)) })
+                }
+              />
+              <p className="mt-1.5 text-xs text-slate-500">Pages per batch (1–5000)</p>
+            </div>
+            <div>
+              <label className="label" htmlFor="concurrency">
+                Concurrency
+              </label>
+              <input
+                id="concurrency"
+                type="number"
+                className="input"
+                min={1}
+                max={32}
+                value={options.concurrency ?? DEFAULT_UI_INGEST_REQUEST.concurrency}
+                onChange={(e) =>
+                  patchOptions({ concurrency: Math.max(1, Math.min(32, Number(e.target.value) || 1)) })
+                }
+              />
+              <p className="mt-1.5 text-xs text-slate-500">Parallel workers per batch (1–32)</p>
+            </div>
           </div>
         </div>
 

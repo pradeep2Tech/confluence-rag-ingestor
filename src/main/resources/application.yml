@@ -17,9 +17,9 @@ spring:
         options:
           model: ${confluence.ingestor.ui-default-llm-model:llama3.2}
       init:
-        pull-model-strategy: when_missing
+        pull-model-strategy: never
         chat:
-          include: true
+          include: false
   kafka:
     bootstrap-servers: ${confluence.ingestor.kafka.bootstrap-servers:localhost:9092}
 
@@ -47,11 +47,21 @@ logging:
   file:
     name: logs/app.log
 
+app:
+  attachment-analysis:
+    enabled: true
+    vision-enabled: false
+    vision-model: qwen3-vl:8b
+    ollama-base-url: http://localhost:11434
+    timeout: 30s
+    max-file-size-mb: 20
+    schema-version: 1
+
 confluence:
   ingestor:
     data-directory: data
     default-batch-size: 100
-    default-concurrency: 5
+    default-concurrency: 1
     default-request-timeout-seconds: 60
     verify-ssl: false
     manifest-version: 1
@@ -74,8 +84,8 @@ confluence:
     default-query-top-k: 5
     default-similarity-threshold: 0.0
     per-page-state-enabled: false
-    async-core-pool-size: 2
-    async-max-pool-size: 4
+    async-core-pool-size: 1
+    async-max-pool-size: 2
     ui-config-file: data/ui-config.json
     ui-default-llm-model: llama3.2
     kafka:

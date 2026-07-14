@@ -3,8 +3,10 @@ import type {
   ConfigRequest,
   ConfigResponse,
   ConfluenceTestResponse,
+  HealthResponse,
   IngestionResponse,
   IngestionStatus,
+  UiIngestRequest,
 } from '../types/api';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
@@ -47,8 +49,11 @@ export const api = {
         pat: body.pat,
       }),
     }),
-  startIngestion: () =>
-    request<IngestionResponse>('/api/ingest', { method: 'POST', body: '{}' }),
+  startIngestion: (options: UiIngestRequest) =>
+    request<IngestionResponse>('/api/ingest', {
+      method: 'POST',
+      body: JSON.stringify(options),
+    }),
   getIngestionStatus: (parentPageId?: string) => {
     const query = parentPageId ? `?parentPageId=${encodeURIComponent(parentPageId)}` : '';
     return request<IngestionStatus>(`/api/ingest/status${query}`);
@@ -58,5 +63,5 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ question, parentPageId }),
     }),
-  health: () => request<{ status: string }>('/health'),
+  health: () => request<HealthResponse>('/api/health'),
 };

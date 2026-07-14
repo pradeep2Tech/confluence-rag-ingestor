@@ -6,16 +6,11 @@ import org.springframework.ai.embedding.EmbeddingResponse;
 import io.micrometer.observation.annotation.Observed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 /**
  * Thin wrapper over Spring AI {@link EmbeddingModel} for explicit embedding calls (Phase 9 query).
  */
-@Service
-@ConditionalOnBean(EmbeddingModel.class)
 public class EmbeddingService {
 
     private static final Logger log = LoggerFactory.getLogger(EmbeddingService.class);

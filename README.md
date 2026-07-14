@@ -17,6 +17,8 @@ Full reference: [docs/agent/observability.md](docs/agent/observability.md).
 - Maven 3.9+
 - **Runtime:** [Ollama](https://ollama.com/) with `nomic-embed-text`, [ChromaDB](https://www.trychroma.com/) on `localhost:8000` (e.g. Podman)
 
+By default the app avoids heavy local vision-model calls and runs ingestion with conservative concurrency for Windows laptops. Generic image vision extraction can be enabled with `app.attachment-analysis.vision-enabled=true`, but local models such as `qwen3-vl:8b` can saturate CPU/RAM/GPU during ingestion.
+
 Stack: Spring Boot **4.0.3**, Spring AI **2.0.0**, springdoc-openapi **3.0.3**.
 
 ## Build & run
@@ -171,7 +173,7 @@ curl -X POST "http://localhost:8080/api/confluence/ingest" ^
 Processes pending manifest pages in the background (batched by `batchSize` / `concurrency`). Writes:
 
 ```
-data/{parentPageId}/pages/{pageId}/page.md
+data/{parentPageId}/pages/{pageId}/{pageId}.md
 data/{parentPageId}/pages/{pageId}/metadata.json
 data/{parentPageId}/pages/{pageId}/assets/
 ```
@@ -264,7 +266,7 @@ data/{parentPageId}/
 ├── chunks/                 (Phase 7 — per-page JSONL)
 │   └── {pageId}.jsonl
 └── pages/{pageId}/
-    ├── page.md             (Phase 3+)
+    ├── {pageId}.md         (Phase 3+)
     ├── metadata.json
     └── assets/
         ├── (images)

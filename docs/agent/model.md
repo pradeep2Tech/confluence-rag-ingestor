@@ -21,7 +21,7 @@ Domain models — Jackson-serialized JSON on disk and in API responses.
 
 | Field | Meaning |
 |-------|---------|
-| `markdownExtracted` | `page.md` written |
+| `markdownExtracted` | `<pageId>.md` written |
 | `markdownPath`, `metadataPath`, `assetsDirectory` | Relative paths |
 | `chunked` | JSONL chunks written |
 | `chunksPath` | Path to `{pageId}.jsonl` |

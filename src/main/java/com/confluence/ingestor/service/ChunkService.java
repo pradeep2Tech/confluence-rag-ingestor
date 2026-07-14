@@ -1,10 +1,13 @@
 package com.confluence.ingestor.service;
 
 import com.confluence.ingestor.config.IngestorProperties;
+import com.confluence.ingestor.model.AttachmentsManifestDocument;
 import com.confluence.ingestor.model.ChunkDocument;
 import com.confluence.ingestor.model.PageDocument;
 import com.confluence.ingestor.model.PageManifestEntry;
+import com.confluence.ingestor.rag.ImageChunkGenerator;
 import com.confluence.ingestor.rag.MarkdownChunker;
+import com.confluence.ingestor.storage.AttachmentManifestStorageService;
 import com.confluence.ingestor.storage.ChunkStorageService;
 import com.confluence.ingestor.storage.FileStorageService;
 import com.confluence.ingestor.storage.ManifestService;
@@ -15,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -29,6 +33,8 @@ public class ChunkService {
     private final IngestorProperties properties;
     private final FileStorageService fileStorageService;
     private final MarkdownChunker markdownChunker;
+    private final ImageChunkGenerator imageChunkGenerator;
+    private final AttachmentManifestStorageService attachmentManifestStorageService;
     private final ChunkStorageService chunkStorageService;
     private final ManifestService manifestService;
 
@@ -36,11 +42,15 @@ public class ChunkService {
             IngestorProperties properties,
             FileStorageService fileStorageService,
             MarkdownChunker markdownChunker,
+            ImageChunkGenerator imageChunkGenerator,
+            AttachmentManifestStorageService attachmentManifestStorageService,
             ChunkStorageService chunkStorageService,
             ManifestService manifestService) {
         this.properties = properties;
         this.fileStorageService = fileStorageService;
         this.markdownChunker = markdownChunker;
+        this.imageChunkGenerator = imageChunkGenerator;
+        this.attachmentManifestStorageService = attachmentManifestStorageService;
         this.chunkStorageService = chunkStorageService;
         this.manifestService = manifestService;
     }
@@ -49,7 +59,7 @@ public class ChunkService {
     public ChunkResult chunkPage(String parentPageId, PageManifestEntry entry) {
         String pageId = entry.getPageId();
         try {
-            var markdownPath = fileStorageService.pageMarkdownPath(parentPageId, pageId);
+            var markdownPath = fileStorageService.resolvePageMarkdownPath(parentPageId, pageId);
             if (!Files.isRegularFile(markdownPath)) {
                 return fail(parentPageId, pageId, "Markdown file not found: " + markdownPath);
             }
@@ -57,12 +67,29 @@ public class ChunkService {
             String markdown = Files.readString(markdownPath);
             PageDocument pageDocument = loadPageDocument(parentPageId, pageId);
             Map<String, Object> metadata = buildChunkMetadata(entry, pageDocument);
+            AttachmentsManifestDocument attachmentManifest =
+                    attachmentManifestStorageService.readManifest(parentPageId, pageId);
+            if (attachmentManifest != null) {
+                metadata.put("attachmentCount", attachmentManifest.getAttachments() != null
+                        ? attachmentManifest.getAttachments().size()
+                        : 0);
+            }
             List<ChunkDocument> chunks = markdownChunker.chunk(
                     markdown,
                     parentPageId,
                     pageId,
                     metadata,
                     properties.maxChunkCharacters());
+
+            if (!containsInlineAttachmentInformation(markdown)) {
+                List<ChunkDocument> imageChunks = imageChunkGenerator.generateImageChunks(
+                        parentPageId, pageId, attachmentManifest, metadata, chunks.size());
+                if (!imageChunks.isEmpty()) {
+                    List<ChunkDocument> combined = new ArrayList<>(chunks);
+                    combined.addAll(imageChunks);
+                    chunks = combined;
+                }
+            }
 
             String chunksPath = chunkStorageService.writePageChunks(parentPageId, pageId, chunks);
 
@@ -104,6 +131,10 @@ public class ChunkService {
                     pageDocument.getVersion());
         }
         return MarkdownChunker.pageMetadata(entry.getTitle(), entry.getWebUrl(), null, 0);
+    }
+
+    private static boolean containsInlineAttachmentInformation(String markdown) {
+        return markdown != null && markdown.contains(MarkdownAttachmentEnrichmentService.ENRICHMENT_HEADING);
     }
 
     private ChunkResult fail(String parentPageId, String pageId, String message) {

@@ -22,7 +22,7 @@ Spring configuration, typed properties, infrastructure beans.
 |-----|---------|---------|
 | `data-directory` | `data` | Root for all ingestion artifacts |
 | `default-batch-size` | 100 | Pages per batch wave |
-| `default-concurrency` | 5 | Parallel page workers per batch |
+| `default-concurrency` | 1 | Parallel page workers per batch |
 | `default-request-timeout-seconds` | 60 | Confluence HTTP timeout |
 | `verify-ssl` | false | TLS verification for Confluence |
 | `manifest-version` | 1 | Written into manifest.json |
@@ -36,8 +36,17 @@ Spring configuration, typed properties, infrastructure beans.
 | `default-query-top-k` | 5 | Default retrieval count |
 | `default-similarity-threshold` | 0.0 | Min similarity (0 = all) |
 | `per-page-state-enabled` | false | Per-page `ingestion-state.json` |
-| `async-core-pool-size` | 2 | Background executor core |
-| `async-max-pool-size` | 4 | Background executor max |
+| `async-core-pool-size` | 1 | Background executor core |
+| `async-max-pool-size` | 2 | Background executor max |
+
+### `app.attachment-analysis.*`
+
+| Key | Default | Meaning |
+|-----|---------|---------|
+| `enabled` | true | Classify downloaded attachments and write `attachments-manifest.json` |
+| `vision-enabled` | false | Use local Ollama vision model for generic images; CPU/RAM intensive |
+| `vision-model` | qwen3-vl:8b | Ollama vision model when enabled |
+| `timeout` | 30s | Per-image vision call timeout |
 
 ### `confluence.ingestor.kafka.*`
 
@@ -74,8 +83,8 @@ Full logging, tracing, and Swagger guide: [observability.md](observability.md).
 **Q: How to run without Kafka?**  
 Default — `kafka.enabled=false` activates `InProcessJobPublisher`.
 
-**Q: How to reduce Windows manifest lock contention?**  
-Lower `default-concurrency` to 1, reduce async pool, or enable `per-page-state-enabled`.
+**Q: How to reduce Windows resource pressure?**  
+Keep `default-concurrency` at 1, keep `app.attachment-analysis.vision-enabled=false`, and enable vision only for small test batches on a machine that can comfortably run the selected Ollama vision model.
 
 **Q: Local profile?**  
 Check for `application-local.yml` in `src/main/resources/`.

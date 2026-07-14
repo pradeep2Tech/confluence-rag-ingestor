@@ -12,6 +12,10 @@ import java.util.Map;
 public class ChunkDocument {
 
     private String chunkId;
+    private String chunkType;
+    private String assetType;
+    private String assetPath;
+    private String semanticChunkType;
     private String pageId;
     private String parentPageId;
     private String headingPath;
@@ -25,6 +29,38 @@ public class ChunkDocument {
 
     public void setChunkId(String chunkId) {
         this.chunkId = chunkId;
+    }
+
+    public String getChunkType() {
+        return chunkType;
+    }
+
+    public void setChunkType(String chunkType) {
+        this.chunkType = chunkType;
+    }
+
+    public String getAssetType() {
+        return assetType;
+    }
+
+    public void setAssetType(String assetType) {
+        this.assetType = assetType;
+    }
+
+    public String getAssetPath() {
+        return assetPath;
+    }
+
+    public void setAssetPath(String assetPath) {
+        this.assetPath = assetPath;
+    }
+
+    public String getSemanticChunkType() {
+        return semanticChunkType;
+    }
+
+    public void setSemanticChunkType(String semanticChunkType) {
+        this.semanticChunkType = semanticChunkType;
     }
 
     public String getPageId() {

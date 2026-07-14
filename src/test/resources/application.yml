@@ -11,6 +11,11 @@ spring:
         chat:
           include: false
 
+app:
+  attachment-analysis:
+    enabled: true
+    vision-enabled: false
+
 confluence:
   ingestor:
     data-directory: data

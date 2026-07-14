@@ -83,7 +83,7 @@ data/{parentPageId}/
 ├── batch-progress.json
 ├── chunks/{pageId}.jsonl
 └── pages/{pageId}/
-    ├── page.md
+    ├── <pageId>.md
     ├── metadata.json
     └── assets/
         ├── (images)

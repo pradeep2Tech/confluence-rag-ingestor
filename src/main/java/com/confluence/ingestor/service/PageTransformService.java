@@ -4,11 +4,13 @@ import com.confluence.ingestor.confluence.AttachmentClient;
 import com.confluence.ingestor.confluence.ConfluenceClient;
 import com.confluence.ingestor.confluence.ConfluenceClientError;
 import com.confluence.ingestor.confluence.dto.ConfluencePageContentDto;
+import com.confluence.ingestor.model.AttachmentsManifestDocument;
 import com.confluence.ingestor.model.PageAssetDocument;
 import com.confluence.ingestor.model.PageDiagramDocument;
 import com.confluence.ingestor.model.PageManifestEntry;
 import com.confluence.ingestor.model.PageTableDocument;
 import com.confluence.ingestor.storage.ManifestService;
+import com.confluence.ingestor.storage.AttachmentManifestStorageService;
 import com.confluence.ingestor.storage.PageIngestionStateService;
 import com.confluence.ingestor.storage.PageStorageService;
 import com.confluence.ingestor.storage.PageStorageService.PageArtifacts;
@@ -35,6 +37,9 @@ public class PageTransformService {
     private final AttachmentDownloadService attachmentDownloadService;
     private final DrawioArtifactService drawioArtifactService;
     private final TableArtifactService tableArtifactService;
+    private final AttachmentAnalysisService attachmentAnalysisService;
+    private final MarkdownAttachmentEnrichmentService markdownAttachmentEnrichmentService;
+    private final AttachmentManifestStorageService attachmentManifestStorageService;
     private final PageStorageService pageStorageService;
     private final ManifestService manifestService;
     private final PageIngestionStateService pageIngestionStateService;
@@ -44,6 +49,9 @@ public class PageTransformService {
             AttachmentDownloadService attachmentDownloadService,
             DrawioArtifactService drawioArtifactService,
             TableArtifactService tableArtifactService,
+            AttachmentAnalysisService attachmentAnalysisService,
+            MarkdownAttachmentEnrichmentService markdownAttachmentEnrichmentService,
+            AttachmentManifestStorageService attachmentManifestStorageService,
             PageStorageService pageStorageService,
             ManifestService manifestService,
             PageIngestionStateService pageIngestionStateService) {
@@ -51,6 +59,9 @@ public class PageTransformService {
         this.attachmentDownloadService = attachmentDownloadService;
         this.drawioArtifactService = drawioArtifactService;
         this.tableArtifactService = tableArtifactService;
+        this.attachmentAnalysisService = attachmentAnalysisService;
+        this.markdownAttachmentEnrichmentService = markdownAttachmentEnrichmentService;
+        this.attachmentManifestStorageService = attachmentManifestStorageService;
         this.pageStorageService = pageStorageService;
         this.manifestService = manifestService;
         this.pageIngestionStateService = pageIngestionStateService;
@@ -79,6 +90,22 @@ public class PageTransformService {
             List<PageDiagramDocument> diagrams = drawioResult.diagrams();
 
             String markdown = conversion.markdown();
+            AttachmentsManifestDocument attachmentsManifest = null;
+            try {
+                attachmentsManifest =
+                        attachmentAnalysisService.analyzePageAttachments(parentPageId, pageId, markdown, assets);
+            } catch (Exception ex) {
+                log.warn(
+                        "Attachment analysis failed for parentPageId={} pageId={} - continuing transform: {}",
+                        parentPageId,
+                        pageId,
+                        ex.getMessage());
+            }
+            if (attachmentsManifest == null) {
+                attachmentsManifest = readExistingAttachmentManifest(parentPageId, pageId);
+            }
+            markdown = markdownAttachmentEnrichmentService.enrich(markdown, attachmentsManifest);
+
             String webUrl = client.buildWebUrl(page);
             PageArtifacts artifacts = pageStorageService.writePageArtifacts(
                     parentPageId, page, webUrl, markdown, assets, tables, diagrams);
@@ -97,6 +124,14 @@ public class PageTransformService {
             return fail(parentPageId, pageId, ex.getMessage());
         } catch (Exception ex) {
             return fail(parentPageId, pageId, ex.getMessage());
+        }
+    }
+
+    private AttachmentsManifestDocument readExistingAttachmentManifest(String parentPageId, String pageId) {
+        try {
+            return attachmentManifestStorageService.readManifest(parentPageId, pageId);
+        } catch (Exception ex) {
+            return null;
         }
     }
 

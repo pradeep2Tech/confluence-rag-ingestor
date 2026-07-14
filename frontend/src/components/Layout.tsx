@@ -1,4 +1,6 @@
 import { Database, MessageSquare, Settings2, Sparkles } from 'lucide-react';
+import { HealthChecksPanel } from './HealthChecksPanel';
+import type { ComponentHealth } from '../types/api';
 
 export type NavSection = 'config' | 'ingest' | 'chat';
 
@@ -6,7 +8,12 @@ interface LayoutProps {
   active: NavSection;
   onNavigate: (section: NavSection) => void;
   children: React.ReactNode;
-  backendHealthy: boolean | null;
+  health: {
+    application: ComponentHealth | null;
+    vectorStore: ComponentHealth | null;
+    model: ComponentHealth | null;
+  } | null;
+  healthLoading: boolean;
 }
 
 const navItems: { id: NavSection; label: string; icon: typeof Settings2 }[] = [
@@ -15,7 +22,7 @@ const navItems: { id: NavSection; label: string; icon: typeof Settings2 }[] = [
   { id: 'chat', label: 'Ask AI', icon: MessageSquare },
 ];
 
-export function Layout({ active, onNavigate, children, backendHealthy }: LayoutProps) {
+export function Layout({ active, onNavigate, children, health, healthLoading }: LayoutProps) {
   return (
     <div className="min-h-screen lg:flex">
       <aside className="border-b border-slate-800 bg-slate-900/80 lg:fixed lg:inset-y-0 lg:w-72 lg:border-b-0 lg:border-r">
@@ -49,23 +56,7 @@ export function Layout({ active, onNavigate, children, backendHealthy }: LayoutP
           </nav>
 
           <div className="mt-auto pt-8">
-            <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">Backend</p>
-              <div className="mt-2 flex items-center gap-2">
-                <span
-                  className={`h-2.5 w-2.5 rounded-full ${
-                    backendHealthy === null
-                      ? 'bg-amber-400'
-                      : backendHealthy
-                        ? 'bg-emerald-400'
-                        : 'bg-rose-400'
-                  }`}
-                />
-                <span className="text-sm text-slate-300">
-                  {backendHealthy === null ? 'Checking…' : backendHealthy ? 'Connected' : 'Offline'}
-                </span>
-              </div>
-            </div>
+            <HealthChecksPanel health={health} loading={healthLoading} />
           </div>
         </div>
       </aside>

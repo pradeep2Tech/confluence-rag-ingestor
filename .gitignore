@@ -41,6 +41,9 @@ release.properties
 frontend/node_modules/
 frontend/dist/
 
+# Cursor hook runtime state
+.cursor/hooks/.java-edited
+
 # Agent / recovery scratch (do not commit one-off scripts or notes)
 _recovered_tests/
 _extracted_from_transcript/

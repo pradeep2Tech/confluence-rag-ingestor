@@ -7,16 +7,11 @@ import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import io.micrometer.observation.annotation.Observed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 /**
  * Semantic search over ChromaDB via Spring AI {@link VectorStore}.
  */
-@Service
-@ConditionalOnBean(VectorStore.class)
 public class ChromaQueryService {
 
     private static final Logger log = LoggerFactory.getLogger(ChromaQueryService.class);

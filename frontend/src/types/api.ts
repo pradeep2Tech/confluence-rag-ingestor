@@ -40,6 +40,24 @@ export interface ConfluenceTestResponse {
   spaceKey: string | null;
 }
 
+export interface UiIngestRequest {
+  forceRebuildManifest: boolean;
+  extractMarkdown: boolean;
+  chunkMarkdown: boolean;
+  ingestVectors: boolean;
+  batchSize?: number;
+  concurrency?: number;
+}
+
+export const DEFAULT_UI_INGEST_REQUEST: UiIngestRequest = {
+  forceRebuildManifest: true,
+  extractMarkdown: true,
+  chunkMarkdown: true,
+  ingestVectors: true,
+  batchSize: 100,
+  concurrency: 5,
+};
+
 export interface IngestionResponse {
   status: 'ACCEPTED' | 'ALREADY_RUNNING' | 'ERROR' | 'SUCCESS';
   mode: string;
@@ -91,4 +109,17 @@ export interface ChatMessage {
   content: string;
   sources?: ChatSource[];
   loading?: boolean;
+}
+
+export type HealthStatus = 'UP' | 'DOWN';
+
+export interface ComponentHealth {
+  status: HealthStatus;
+  message: string;
+}
+
+export interface HealthResponse {
+  application: ComponentHealth;
+  vectorStore: ComponentHealth;
+  model: ComponentHealth;
 }

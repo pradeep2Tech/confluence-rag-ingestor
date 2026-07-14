@@ -72,6 +72,7 @@ public class PageTransformBatchService {
         AtomicInteger failedThisRun = new AtomicInteger();
         BatchProgressService.BatchProgressTracker progress =
                 batchProgressService.newTracker(parentPageId, BatchPhase.PAGE_TRANSFORM);
+        boolean completed = false;
 
         try {
             if (!manifestService.manifestExists(parentPageId)) {
@@ -115,7 +116,7 @@ public class PageTransformBatchService {
                     parentPageId,
                     ingestedThisRun.get(),
                     failedThisRun.get());
-            scheduleChainedChunkBatch(request, parentPageId);
+            completed = true;
         } catch (IOException ex) {
             progress.writeFailed(ex.getMessage());
             log.warn("Page transform I/O error for parentPageId={}: {}", parentPageId, ex.getMessage());
@@ -124,6 +125,10 @@ public class PageTransformBatchService {
             log.error("Page transform error for parentPageId={}", parentPageId, ex);
         } finally {
             jobCoordinator.releasePageTransform(parentPageId);
+        }
+
+        if (completed) {
+            scheduleChainedChunkBatch(request, parentPageId);
         }
     }
 
@@ -203,7 +208,7 @@ public class PageTransformBatchService {
             log.info("Chained chunk batch scheduled for parentPageId={}", parentPageId);
         } else {
             log.warn(
-                    "Skipped chained chunk batch for parentPageId={} because another chunk batch is active",
+                    "Skipped chained chunk batch for parentPageId={} — could not acquire chunk batch lock",
                     parentPageId);
         }
     }

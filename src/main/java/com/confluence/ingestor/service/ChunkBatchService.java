@@ -67,6 +67,7 @@ public class ChunkBatchService {
         AtomicInteger failedThisRun = new AtomicInteger();
         BatchProgressService.BatchProgressTracker progress =
                 batchProgressService.newTracker(parentPageId, BatchPhase.CHUNK);
+        boolean completed = false;
 
         try {
             if (!manifestService.manifestExists(parentPageId)) {
@@ -106,7 +107,7 @@ public class ChunkBatchService {
                     parentPageId,
                     chunkedThisRun.get(),
                     failedThisRun.get());
-            scheduleChainedVectorIngest(request, parentPageId);
+            completed = true;
         } catch (IOException ex) {
             progress.writeFailed(ex.getMessage());
             log.warn("Chunk batch I/O error for parentPageId={}: {}", parentPageId, ex.getMessage());
@@ -115,6 +116,10 @@ public class ChunkBatchService {
             log.error("Chunk batch error for parentPageId={}", parentPageId, ex);
         } finally {
             jobCoordinator.releaseChunkBatch(parentPageId);
+        }
+
+        if (completed) {
+            scheduleChainedVectorIngest(request, parentPageId);
         }
     }
 
@@ -193,7 +198,7 @@ public class ChunkBatchService {
             log.info("Chained vector ingest scheduled for parentPageId={}", parentPageId);
         } else {
             log.warn(
-                    "Skipped chained vector ingest for parentPageId={} because another vector ingest is active",
+                    "Skipped chained vector ingest for parentPageId={} — could not acquire vector ingest lock",
                     parentPageId);
         }
     }

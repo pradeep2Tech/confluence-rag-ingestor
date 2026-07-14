@@ -15,7 +15,7 @@ On-disk persistence — manifests, progress, pages, chunks. Implements `Manifest
 | `CrawlProgressService` | `crawl-progress.json` read/write |
 | `BatchProgressService` | `batch-progress.json` for batch phases |
 | `BatchPhase` | Enum: `PAGE_TRANSFORM`, `CHUNK`, `VECTOR_INGEST` |
-| `PageStorageService` | `page.md`, `metadata.json`, assets paths |
+| `PageStorageService` | `<pageId>.md`, `metadata.json`, assets paths |
 | `ChunkStorageService` | `chunks/{pageId}.jsonl` read/write |
 | `PageIngestionStateService` | Optional per-page state files when enabled |
 

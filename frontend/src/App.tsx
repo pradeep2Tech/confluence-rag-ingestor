@@ -8,11 +8,14 @@ import { Layout, type NavSection } from './components/Layout';
 import { StatusAlert } from './components/StatusAlert';
 import type {
   ChatMessage,
+  ComponentHealth,
   ConfigRequest,
   ConfigResponse,
   ConfluenceTestResponse,
+  HealthResponse,
   IngestionResponse,
   IngestionStatus,
+  UiIngestRequest,
 } from './types/api';
 
 function configFromResponse(response: ConfigResponse): ConfigRequest {
@@ -43,7 +46,8 @@ export default function App() {
   const [question, setQuestion] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [backendHealthy, setBackendHealthy] = useState<boolean | null>(null);
+  const [health, setHealth] = useState<HealthResponse | null>(null);
+  const [healthLoading, setHealthLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [starting, setStarting] = useState(false);
@@ -72,12 +76,29 @@ export default function App() {
     }
   }, [savedConfig?.parentPageId]);
 
+  const refreshHealth = useCallback(async () => {
+    setHealthLoading(true);
+    try {
+      const response = await api.health();
+      setHealth(response);
+    } catch {
+      const offline: ComponentHealth = { status: 'DOWN', message: 'Backend unreachable' };
+      setHealth({
+        application: offline,
+        vectorStore: { status: 'DOWN', message: 'Unknown — backend offline' },
+        model: { status: 'DOWN', message: 'Unknown — backend offline' },
+      });
+    } finally {
+      setHealthLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadConfig();
-    api.health()
-      .then(() => setBackendHealthy(true))
-      .catch(() => setBackendHealthy(false));
-  }, [loadConfig]);
+    refreshHealth();
+    const interval = setInterval(refreshHealth, 30000);
+    return () => clearInterval(interval);
+  }, [loadConfig, refreshHealth]);
 
   useEffect(() => {
     if (section !== 'ingest' || !savedConfig?.parentPageId) return;
@@ -121,12 +142,12 @@ export default function App() {
     }
   };
 
-  const handleStartIngestion = async () => {
+  const handleStartIngestion = async (options: UiIngestRequest) => {
     setStarting(true);
     setError(null);
     setSuccess(null);
     try {
-      const result = await api.startIngestion();
+      const result = await api.startIngestion(options);
       setLastIngestion(result);
       setSuccess(result.message);
       await refreshStatus();
@@ -185,7 +206,7 @@ export default function App() {
   };
 
   return (
-    <Layout active={section} onNavigate={setSection} backendHealthy={backendHealthy}>
+    <Layout active={section} onNavigate={setSection} health={health} healthLoading={healthLoading}>
       <div className="mb-6 space-y-3">
         {error && (
           <StatusAlert variant="error" title="Error" message={error} onDismiss={() => setError(null)} />

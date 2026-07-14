@@ -66,11 +66,31 @@ public class FileStorageService {
     }
 
     public Path pageMarkdownPath(String parentPageId, String pageId) {
+        return pageDirectory(parentPageId, pageId).resolve(pageId + ".md");
+    }
+
+    public Path legacyPageMarkdownPath(String parentPageId, String pageId) {
         return pageDirectory(parentPageId, pageId).resolve("page.md");
+    }
+
+    public Path resolvePageMarkdownPath(String parentPageId, String pageId) {
+        Path canonical = pageMarkdownPath(parentPageId, pageId);
+        if (Files.isRegularFile(canonical)) {
+            return canonical;
+        }
+        Path legacy = legacyPageMarkdownPath(parentPageId, pageId);
+        if (Files.isRegularFile(legacy)) {
+            return legacy;
+        }
+        return canonical;
     }
 
     public Path pageMetadataPath(String parentPageId, String pageId) {
         return pageDirectory(parentPageId, pageId).resolve("metadata.json");
+    }
+
+    public Path pageAttachmentsManifestPath(String parentPageId, String pageId) {
+        return pageDirectory(parentPageId, pageId).resolve("attachments-manifest.json");
     }
 
     public Path pageAssetsDirectory(String parentPageId, String pageId) {

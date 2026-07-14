@@ -1,4 +1,9 @@
 # Local development profile — reduces manifest lock contention on Windows (Phase 11c).
+app:
+  attachment-analysis:
+    vision-enabled: false
+    timeout: 30s
+
 confluence:
   ingestor:
     default-concurrency: 1
